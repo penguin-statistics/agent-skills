@@ -39,6 +39,10 @@ reads its own manifest:
 
 ## Checks
 
+`.github/workflows/validate.yml` runs these on every pull request and every Monday, plus a link check (`.lycheeignore`
+lists what a GET can't check) and a check of the live MCP tools against `references/mcp.md`
+(`.github/scripts/check_mcp.py`). To run them by hand:
+
 ```sh
 # the Agent Skills reference validator (agentskills/agentskills, pinned)
 uvx --from 'git+https://github.com/agentskills/agentskills@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref' \
@@ -47,6 +51,10 @@ uvx --from 'git+https://github.com/agentskills/agentskills@69ef37e9424c0a7ea9dd2
 claude plugin validate . --strict
 # the Gemini CLI extension
 npx -y @google/gemini-cli@0.63.0 extensions validate .
+# every manifest against its client's schema, and one name, version and server URL in all of them
+uv run --no-project --with jsonschema==4.26.0 python .github/scripts/check_manifests.py
+# the MCP tools and arguments in references/mcp.md against the live server
+python3 .github/scripts/check_mcp.py
 # each script once against the live API
 python3 skills/penguin-stats-api/scripts/top_stages.py 30012 --server CN --top 3
 ```
