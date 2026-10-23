@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "penguin-stats",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Arknights drop rates from Penguin Statistics: the read-only MCP server, plus a skill on reading and citing the numbers.",
   "author": { "name": "Penguin Statistics", "url": "https://penguin-stats.io" },
   "homepage": "https://mcp.penguin-stats.io/",

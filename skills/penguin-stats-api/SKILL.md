@@ -5,7 +5,7 @@ license: MIT
 compatibility: Needs network access to https://penguin-stats.io (REST API) or to the Penguin Statistics MCP server (https://mcp.penguin-stats.io/mcp).
 metadata:
   author: penguin-statistics
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # Penguin Statistics drop data
@@ -29,8 +29,10 @@ To connect the MCP server: [references/mcp.md](references/mcp.md).
 
 ## Rules
 
-- **Always choose the server** (`CN`, `US`, `JP`, `KR`; US is the global/English server) and say which one the numbers
-  are for. The API defaults to CN when `server` is left out; pass it anyway.
+- **Know the user's server** (`CN`, `US`, `JP`, `KR`; US is the global/English server) and say which one the numbers
+  are for. Take it from the conversation (a user writing Chinese, Japanese or Korean most likely plays CN, JP or KR);
+  if you can't tell, ask which server they play on. The MCP drop tools require `server`; the REST API defaults to CN
+  when it is left out, so pass it anyway.
 - **Drop rate = `quantity / times`**: the expected number of the item per run. It can exceed 1 (100%). `times` is the
   number of runs, not of reports. Sanity per item = `apCost / (quantity / times)`.
 - **Say when the data is from**: the data-as-of time (MCP `dataAsOf`; REST `Last-Modified` when sent, else the time
@@ -59,11 +61,11 @@ Pass `server` on every call that takes it, and `lang` (`zh`, `en`, `ja`, `ko`) f
 Arguments are in [references/mcp.md](references/mcp.md).
 
 - **"Where do I farm X?" (X 去哪刷)**
-  1. `search_items(query="X")`. If `ambiguous` is true (石头 matches every tier of Orirock), list the candidates and
-     ask which one; don't pick for the user.
-  2. `get_item_drop_rates(item_id=..., server=..., top_n=3)`. The default order is sanity per item; pass
-     `sort_by="drop_rate"` when the user asks for the highest drop rate.
-  3. Answer with each stage's code, sanity per item, drop rate and runs (`times`), and flag rows with `lowSample`.
+  1. `get_item_drop_rates(item_id="X", server=..., top_n=3)`. It takes the item's name in any language, and one call
+     ranks every open stage that drops it: don't look stages up one by one with `get_stage_drops`. If the name means
+     several items (石头 is every tier of Orirock), the error lists them: ask which one; don't pick for the user. The
+     default order is sanity per item; pass `sort_by="drop_rate"` when the user asks for the highest drop rate.
+  2. Answer with each stage's code, sanity per item, drop rate and runs (`times`), and flag rows with `lowSample`.
      Then give the server, `dataAsOf` and `source.attribution`.
 - **"What does 1-7 drop?"**
   1. `search_stages(query="1-7", server=...)`. One code can name several stages: the normal and the tough version
