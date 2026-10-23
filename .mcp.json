@@ -1,0 +1,5 @@
+{
+  "mcpServers": {
+    "penguin-stats": { "type": "http", "url": "https://mcp.penguin-stats.io/mcp" }
+  }
+}
