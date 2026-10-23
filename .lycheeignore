@@ -1,0 +1,6 @@
+# The MCP endpoint takes only POST; a GET is a 405 by design. .github/scripts/check_mcp.py checks it the way a client
+# does instead.
+^https://mcp\.penguin-stats\.io/mcp
+# The setup guide at the root of the MCP host ships with a backend-next release after this repository goes public.
+# Remove this line once https://mcp.penguin-stats.io/ answers 200.
+^https://mcp\.penguin-stats\.io/(#.*)?$
