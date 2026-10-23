@@ -32,9 +32,12 @@ def main():
     url = json.loads((ROOT / ".mcp.json").read_text(encoding="utf-8"))["mcpServers"]["penguin-stats"]["url"]
     tools = {t["name"]: t for t in call(url, "tools/list")["tools"]}
     # The table rows of the reference start with the call: | `get_stage_drops(stage_id, server?, lang?)` | ...
-    documented = {}
+    # an argument without "?" is required
+    documented, required = {}, {}
     for name, args in re.findall(r"^\| `(\w+)\(([^)]*)\)` \|", REFERENCE.read_text(encoding="utf-8"), re.M):
-        documented[name] = {a.strip().rstrip("?") for a in args.split(",") if a.strip()}
+        args = [a.strip() for a in args.split(",") if a.strip()]
+        documented[name] = {a.rstrip("?") for a in args}
+        required[name] = {a for a in args if not a.endswith("?")}
 
     problems = []
     if set(documented) != set(tools):
@@ -43,13 +46,18 @@ def main():
         live = set(tools[name]["inputSchema"].get("properties", {}))
         if documented[name] != live:
             problems.append(f"{name}: the server takes {sorted(live)}, {REFERENCE.name} documents {sorted(documented[name])}")
+        live_required = set(tools[name]["inputSchema"].get("required", []))
+        if required[name] != live_required:
+            problems.append(f"{name}: the server requires {sorted(live_required)}, {REFERENCE.name} marks "
+                            f"{sorted(required[name])} required (no ?)")
         if not tools[name].get("annotations", {}).get("readOnlyHint"):
             problems.append(f"{name}: not marked read-only, while the reference says the server is read-only")
     for p in problems:
         print(f"FAIL {p}")
     if problems:
         sys.exit(f"{len(problems)} problem(s)")
-    print(f"ok   {url}: {len(tools)} tools, the same as {REFERENCE.relative_to(ROOT)}, all read-only")
+    print(f"ok   {url}: {len(tools)} tools, the same as {REFERENCE.relative_to(ROOT)} with the same required "
+          "arguments, all read-only")
 
 
 if __name__ == "__main__":
