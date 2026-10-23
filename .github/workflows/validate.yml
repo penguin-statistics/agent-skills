@@ -1,0 +1,137 @@
+name: Validate
+
+# Checks that each client can load the skill and the plugin, and that what they say still holds. Most of it depends on
+# things outside this repository (the API, the MCP server, the manifest schemas, the linked pages), so it also runs
+# weekly, not only when this repository changes.
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    # Mondays, 06:17 UTC
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The validators are pinned: a new release can change what passes, so bump them on purpose.
+  SKILLS_REF: git+https://github.com/agentskills/agentskills@69ef37e9424c0a7ea9dd2293b559e43ec8176379#subdirectory=skills-ref
+  CLAUDE_CODE_VERSION: 2.1.296
+  GEMINI_CLI_VERSION: 0.63.0
+  JSONSCHEMA_VERSION: 4.26.0
+
+jobs:
+  skill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      # The reference validator of the Agent Skills specification: name, description and compatibility limits, and a
+      # name equal to the directory.
+      - name: skills-ref validate
+        run: |
+          for skill in skills/*/; do
+            uvx --from "$SKILLS_REF" skills-ref validate "$skill"
+          done
+
+      # The frontmatter checks in the acceptance criteria of the skill, word for word; they need no validator.
+      - name: Frontmatter
+        shell: bash
+        run: |
+          f=skills/penguin-stats-api/SKILL.md
+          awk '/^---$/{n++; next} n==1' "$f" | grep -E '^name: penguin-stats-api$'
+          awk '/^---$/{n++; next} n==1 && /^description:/' "$f" | awk '{ if (length($0) <= 1040) print "ok" }' | grep -x ok
+
+      # Claude Code's own checks of the skill files, which are not all the same as the specification's.
+      - name: claude plugin validate skills
+        run: npx -y "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" plugin validate skills --strict
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      # --strict fails on warnings too: an unknown field is dropped by Claude Code without a word, which is how a
+      # typo goes unnoticed.
+      - name: claude plugin validate (marketplace)
+        run: npx -y "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" plugin validate . --strict
+
+      - name: claude plugin validate (plugin.json and .mcp.json)
+        run: npx -y "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" plugin validate .claude-plugin/plugin.json --strict
+
+      - name: gemini extensions validate
+        run: npx -y "@google/gemini-cli@${GEMINI_CLI_VERSION}" extensions validate .
+
+      # Every manifest against the current schema of its client, and the manifests against each other: one name, one
+      # version, one server URL.
+      - name: Schemas and consistency
+        run: uv run --no-project --with "jsonschema==${JSONSCHEMA_VERSION}" python .github/scripts/check_manifests.py
+
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Links in the docs and manifests, external and relative. .lycheeignore lists what a GET can't check.
+      - name: Links
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --no-progress --max-retries 3 --retry-wait-time 5
+            './**/*.md' './*.json' './.claude-plugin/*.json' './.mcp.json'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The tools and arguments references/mcp.md documents, against the server at the plugin's URL.
+      - name: MCP server
+        run: python3 -I .github/scripts/check_mcp.py
+
+      # The example script against the live API. Its output must name the server, give the window and the fetch
+      # time, and credit the data; an ambiguous alias must stop it rather than pick an item.
+      - name: Example script
+        shell: bash
+        run: |
+          s=skills/penguin-stats-api/scripts/top_stages.py
+          run() {
+            echo "\$ python3 $s $*"
+            out=$(python3 -I "$s" "$@")
+            printf '%s\n\n' "$out"
+            grep -q ' server, open stages, by .*; fetched ' <<<"$out"
+            grep -q ' window since ' <<<"$out"
+            grep -qx 'Data: Penguin Statistics (penguin-stats.io), CC BY-NC 4.0 (https://creativecommons.org/licenses/by-nc/4.0/)' <<<"$out"
+          }
+          run 30012 --server CN --top 3
+          run 30012 --server CN --top 3 --sort sanity
+          run "Orirock Cube" --server US --sort sanity
+          if python3 -I "$s" 石头; then
+            echo "an alias of several items must not resolve to one" >&2
+            exit 1
+          fi
