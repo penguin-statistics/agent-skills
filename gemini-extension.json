@@ -1,0 +1,8 @@
+{
+  "name": "penguin-stats",
+  "version": "1.0.0",
+  "description": "Arknights drop rates from Penguin Statistics (read-only MCP server + skill).",
+  "mcpServers": {
+    "penguin-stats": { "httpUrl": "https://mcp.penguin-stats.io/mcp?via=plugin" }
+  }
+}

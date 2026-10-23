@@ -16,6 +16,42 @@ account and no API key. How to add it to Claude, ChatGPT, Cursor, VS Code, Cherr
 
 ## Install
 
+### The plugin: MCP server and skill together
+
+- **Claude Code** (2.1.292 or later):
+
+  ```
+  /plugin install penguin-stats --marketplace penguin-statistics/agent-skills
+  ```
+
+  On older versions: `/plugin marketplace add penguin-statistics/agent-skills`, then
+  `/plugin install penguin-stats@penguin-statistics`.
+
+- **Claude** (claude.ai, desktop app): **Customize → Plugins → Add → Add marketplace**, enter
+  `penguin-statistics/agent-skills` and add **Penguin Statistics**. Then connect the server on the plugin's
+  **Connectors** tab (no sign-in needed).
+
+- **Codex**:
+
+  ```sh
+  codex plugin marketplace add penguin-statistics/agent-skills
+  codex plugin add penguin-stats@penguin-statistics
+  ```
+
+- **Gemini CLI**:
+
+  ```sh
+  gemini extensions install https://github.com/penguin-statistics/agent-skills
+  ```
+
+- **VS Code** (GitHub Copilot): with the `chat.plugins.enabled` setting on, run **Chat: Install Plugin From Source**
+  from the Command Palette and enter `https://github.com/penguin-statistics/agent-skills`.
+
+If you added the server by hand before, you can remove that entry: Claude Code and claude.ai treat the two as one
+server, but other apps may load the tools twice.
+
+### The skill only
+
 - **Any agent** (Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI, OpenCode and others), with Node.js:
 
   ```sh
@@ -24,6 +60,11 @@ account and no API key. How to add it to Claude, ChatGPT, Cursor, VS Code, Cherr
 
 - **Claude** (claude.ai, desktop app): zip the `skills/penguin-stats-api` folder (the folder itself, not its files)
   and upload the zip under **Customize → Skills**.
+
+### The MCP server only
+
+Steps for Claude, ChatGPT, Cursor, VS Code, Cherry Studio, Codex, Gemini CLI and others, with one-click links where
+the app has them: **https://mcp.penguin-stats.io/**
 
 ## Try it
 
