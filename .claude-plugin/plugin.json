@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "penguin-stats",
+  "displayName": "Penguin Statistics",
+  "version": "1.0.0",
+  "description": "Arknights drop rates from Penguin Statistics (penguin-stats.io): the read-only MCP server, plus a skill that teaches the agent to read, cite and query the numbers.",
+  "author": { "name": "Penguin Statistics", "url": "https://penguin-stats.io" },
+  "homepage": "https://mcp.penguin-stats.io/",
+  "repository": "https://github.com/penguin-statistics/agent-skills",
+  "license": "MIT",
+  "keywords": ["arknights", "明日方舟", "drop-rates", "penguin-stats", "mcp"],
+  "icon": "./assets/logo.png",
+  "documentationUrl": "https://mcp.penguin-stats.io/",
+  "supportUrl": "https://github.com/penguin-statistics/agent-skills/issues",
+  "privacyPolicyUrl": "https://mcp.penguin-stats.io/#privacy"
+}
